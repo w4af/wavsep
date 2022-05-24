@@ -7,16 +7,17 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 
 //connection pool management implementation
-import org.apache.commons.pool.ObjectPool;
-import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.commons.dbcp.ConnectionFactory;
-import org.apache.commons.dbcp.PoolingDriver;
-import org.apache.commons.dbcp.PoolableConnectionFactory;
-import org.apache.commons.dbcp.DriverManagerConnectionFactory;
+import org.apache.commons.pool2.ObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.apache.commons.dbcp2.ConnectionFactory;
+import org.apache.commons.dbcp2.PoolingDriver;
+import org.apache.commons.dbcp2.PoolableConnectionFactory;
+import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 
-import com.mysql.jdbc.PreparedStatement;
 import com.sectooladdict.constants.DatabaseConstants;
 
 /**
@@ -203,21 +204,19 @@ public final class ConnectionPoolManager {
         GenericObjectPool connectionPool = null;
 
         //Code-level configuration is mainly used for testing
-        GenericObjectPool.Config poolConfig =
-            new GenericObjectPool.Config();
-        poolConfig.lifo = true; //last idle connection -> first borrowed
-        poolConfig.maxActive = 15;
-        poolConfig.maxIdle = 15;
-        poolConfig.maxWait = 60000;
-        poolConfig.minEvictableIdleTimeMillis = 1800000;
-        poolConfig.minIdle = 5;
-        poolConfig.numTestsPerEvictionRun = 3;
-        poolConfig.softMinEvictableIdleTimeMillis = 1800000;
-        poolConfig.testOnBorrow = false;
-        poolConfig.testOnReturn = false;
-        poolConfig.testWhileIdle = false;
-        poolConfig.timeBetweenEvictionRunsMillis = 30000;
-        poolConfig.whenExhaustedAction = GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION;
+        GenericObjectPoolConfig poolConfig =
+            new GenericObjectPoolConfig();
+        poolConfig.setLifo(true); //last idle connection -> first borrowed
+        poolConfig.setMaxTotal(15);
+        poolConfig.setMaxIdle(15);
+        poolConfig.setMaxWaitMillis(60000);
+        poolConfig.setSoftMinEvictableIdleTime(Duration.ofSeconds(1800));
+        poolConfig.setMinIdle(5);
+        poolConfig.setNumTestsPerEvictionRun(3);
+        poolConfig.setTestOnBorrow(false);
+        poolConfig.setTestOnReturn(false);
+        poolConfig.setTestWhileIdle(false);
+        poolConfig.setTimeBetweenEvictionRuns(Duration.ofSeconds(30));
 
         connectionPool = new GenericObjectPool(null, poolConfig);
 
@@ -230,7 +229,9 @@ public final class ConnectionPoolManager {
 
         PoolableConnectionFactory poolableConnectionFactory =
             new PoolableConnectionFactory(
-                connFactory, connectionPool, null, null, false, true);
+                connFactory, null
+            );
+        poolableConnectionFactory.setPool(connectionPool);
 
         //load the pool driver
         Class.forName("org.apache.commons.dbcp.PoolingDriver");
