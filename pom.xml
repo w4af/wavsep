@@ -20,9 +20,6 @@
       <plugin>
         <artifactId>maven-war-plugin</artifactId>
         <version>3.2.3</version>
-        <configuration>
-          <warSourceDirectory>WebContent</warSourceDirectory>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.eclipse.jetty</groupId>
