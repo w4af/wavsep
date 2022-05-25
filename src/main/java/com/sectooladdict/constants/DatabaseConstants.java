@@ -21,12 +21,6 @@ public final class DatabaseConstants {
     //* MySQL CONSTANTS *
     //*******************
     /**
-     * This constant is used as the global database driver string.
-     * @since 1.0
-     */
-    public static final String DATABASE_DRIVER =
-        "com.mysql.jdbc.Driver";
-    /**
      * This constant is used as the global wavsep database name string.
      * @since 1.0
      */

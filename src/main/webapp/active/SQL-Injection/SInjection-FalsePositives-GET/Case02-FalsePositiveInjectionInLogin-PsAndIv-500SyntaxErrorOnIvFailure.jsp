@@ -61,7 +61,7 @@ else {
 	  	out.flush();
 	  	
     } catch (SQLException e) {
-    	if(!(e instanceof com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException)) {
+    	if(!(e instanceof java.sql.SQLSyntaxErrorException)) {
   	        System.out.println("Exception details: " + e);
         } 
 
@@ -70,7 +70,7 @@ else {
         }
         response.sendError(500,"Exception details: " + e);
     } catch (Exception e) {
-    	if(!(e instanceof com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException)) {
+    	if(!(e instanceof java.sql.SQLSyntaxErrorException)) {
   	        System.out.println("Exception details: " + e);
         } 
 

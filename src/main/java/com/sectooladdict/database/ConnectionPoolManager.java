@@ -17,8 +17,12 @@ import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.PoolingDriver;
 import org.apache.commons.dbcp2.PoolableConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp2.PoolableConnection;
 
 import com.sectooladdict.constants.DatabaseConstants;
+
+import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvBuilder;
 
 /**
  * The ConnectionPoolManager class uses the external package
@@ -27,33 +31,7 @@ import com.sectooladdict.constants.DatabaseConstants;
  * @author Shay Chen
  * @since 1.0.2
  */
-public final class ConnectionPoolManager {
-
-	//*****************
-    //* Derby Methods *
-    //*****************
-	
-	public static Connection getDerbyConnection() throws Exception{
-		Connection conn = null;
-		try {
-			Class.forName(DatabaseConstants.DERBY_DATABASE_DRIVER);
-			conn = DriverManager.getConnection(DatabaseConstants.DERBY_CONNECTION_STRING);
-		} catch (SQLException e) {
-			//invalid connection string, database is down or driver not loaded
-			try {
-				//Create new driver instance
-				Class.forName(DatabaseConstants.DERBY_DATABASE_DRIVER).newInstance();
-				conn = DriverManager.getConnection(DatabaseConstants.DERBY_CONNECTION_STRING);
-			} catch (Exception e2) {
-				throw e2;
-			}
-		} catch (Exception e) {
-			throw e;
-		} //end of try-catch block
-		
-		return conn; 
-	}
-	
+public final class ConnectionPoolManager {	
 	
     //**********
     //* Fields *
@@ -161,27 +139,18 @@ public final class ConnectionPoolManager {
      */
     public static void loadDatabaseInfo() {
     	try {
-    		java.sql.Connection conn = ConnectionPoolManager.getDerbyConnection();
-			
-    		String sqlString = 
-		          "SELECT host,port,wavsep_username,wavsep_password " +
-		          "FROM mysqlconfiguration " +
-		          "WHERE id=?";
-			java.sql.PreparedStatement pstmt = conn.prepareStatement(sqlString);
-			pstmt.setInt(1,DatabaseConstants.DERBY_DATABASE_CONFIGURATION_ID);
-			
-			ResultSet rs = pstmt.executeQuery();
-		 	
-		 	if(rs.next()) {
-		 		DatabaseConstants.CONNECTION_STRING_WITHOUT_CREDENTIALS =
-		 	        "jdbc:mysql://" + rs.getString(1) + ":" +
-		 	        rs.getString(2) + "/wavsepDB";
-		 		DatabaseConstants.USERNAME = rs.getString(3);
-		 		DatabaseConstants.PASSWORD = rs.getString(4);
-		 		
-	 	    } else {
-	 	 		throw new Exception("database configuration was not initialized!\n");
-	 	 	}
+    		Dotenv dotenv = new DotenvBuilder().ignoreIfMissing().load();
+    		String host = dotenv.get("DB_HOST");
+    		String port = dotenv.get("DB_PORT");
+    		String username = dotenv.get("DB_USERNAME");
+    		String password = dotenv.get("DB_PASSWORD");
+    		if (host == null || port == null || username == null || password == null) {
+    			throw new Exception("No values set for DB_PORT, DB_HOST, DB_USERNAME, DB_PASSWORD environment variables. Aborting");
+    		}    		
+	 		DatabaseConstants.CONNECTION_STRING_WITHOUT_CREDENTIALS =
+	 	        String.format("jdbc:mysql://%s:%s/wavsepDB", host, port);
+	 		DatabaseConstants.USERNAME = username;
+	 		DatabaseConstants.PASSWORD = password;
 		} catch (Exception e) {
 			//database configuration was not initialized
 			System.out.println("config db initialization error: "+e);
@@ -197,11 +166,8 @@ public final class ConnectionPoolManager {
      * @since 1.0
      */
     private static void initializePool() throws Exception {
-
-    	//load the database driver
-        Class.forName(DatabaseConstants.DATABASE_DRIVER);
     	
-        GenericObjectPool connectionPool = null;
+        ObjectPool<PoolableConnection> connectionPool = null;
 
         //Code-level configuration is mainly used for testing
         GenericObjectPoolConfig poolConfig =
@@ -217,24 +183,19 @@ public final class ConnectionPoolManager {
         poolConfig.setTestOnReturn(false);
         poolConfig.setTestWhileIdle(false);
         poolConfig.setTimeBetweenEvictionRuns(Duration.ofSeconds(30));
-
-        connectionPool = new GenericObjectPool(null, poolConfig);
-
+        
+        
         //A connection string without authentication is used for the connection
         //factory creation, since the DriverManagerConnectionFactory
         //integrates credentials separately.
         ConnectionFactory connFactory = new DriverManagerConnectionFactory(
         		DatabaseConstants.CONNECTION_STRING_WITHOUT_CREDENTIALS,
         		DatabaseConstants.USERNAME, DatabaseConstants.PASSWORD);
+        PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connFactory, null);
 
-        PoolableConnectionFactory poolableConnectionFactory =
-            new PoolableConnectionFactory(
-                connFactory, null
-            );
+        connectionPool = new GenericObjectPool<PoolableConnection>(poolableConnectionFactory, poolConfig);
+
         poolableConnectionFactory.setPool(connectionPool);
-
-        //load the pool driver
-        Class.forName("org.apache.commons.dbcp.PoolingDriver");
 
         PoolingDriver poolDriver = new PoolingDriver();
 
