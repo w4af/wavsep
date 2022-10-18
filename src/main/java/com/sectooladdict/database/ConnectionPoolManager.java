@@ -197,7 +197,8 @@ public final class ConnectionPoolManager {
 
         poolableConnectionFactory.setPool(connectionPool);
 
-        PoolingDriver poolDriver = new PoolingDriver();
+        Class.forName("org.apache.commons.dbcp2.PoolingDriver");
+        PoolingDriver poolDriver = (PoolingDriver) DriverManager.getDriver("jdbc:apache:commons:dbcp:");
 
         //set the pool name
         poolDriver.registerPool(DatabaseConstants.CONNECTION_POOL_NAME, 
