@@ -91,9 +91,9 @@ String userPath = System.getProperty("user.dir");
 String documentRootPath =
 	getServletConfig().getServletContext().getRealPath("");
 //Relative path of current file - Absolute
-String currentFilePath = request.getRealPath(request.getServletPath());
+String currentFilePath = request.getSession().getServletContext().getRealPath(request.getServletPath());
 //Relative path of current directory - Absolute - No Final Line Delimiter
-String currentDirPath = request.getRealPath(
+String currentDirPath = request.getSession().getServletContext().getRealPath(
 		(request.getServletPath()).split("/Case")[0]);
 //Web Path of Root - Relative
 String contextPath = this.getServletContext().getContextPath();

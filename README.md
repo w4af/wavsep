@@ -28,15 +28,16 @@ mvn jetty:run
 To build the docker image, after the maven build, simply:
 
 ```
-docker build -t wavesep-jetty-runner .
+docker build -t wavsep .
+docker build -t wavsepdb -f Dockerfile.mysql .
 ```
 
 ### Running
 
-To launch the docker jetty runner:
+To launch the docker image with embedded tomcat server:
 
 ```
-docker run -p 8080:8098 wavesep-jetty-runner
+docker run -p 8080:8098 wavsep
 ```
 
 ## Copyright
